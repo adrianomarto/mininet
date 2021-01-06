@@ -773,7 +773,7 @@ function vm_clean {
     echo 'Removing SSH keys from /etc/ssh/'
     sudo rm -f /etc/ssh/*key*
     if ! grep mininet /etc/rc.local >& /dev/null; then
-        sudo sed -i -e "s/exit 0//" /etc/rc.local
+        sudo sed -i -e "s/exit 0//" /etc/rc.local || true
         echo '
 # mininet: regenerate ssh keys if we deleted them
 if ! stat -t /etc/ssh/*key* >/dev/null 2>&1; then
@@ -782,11 +782,12 @@ fi
 exit 0
 ' | sudo tee -a /etc/rc.local > /dev/null
     fi
-
-    # Remove Mininet files
-    #sudo rm -f /lib/modules/python2.5/site-packages/mininet*
-    #sudo rm -f /usr/bin/mnexec
-
+    # For systemd, enable rc.local service if needed
+    rcgen=/lib/systemd/system-generators/systemd-rc-local-generator
+    if which $rcgen>&/dev/null; then
+        $rcgen || true
+        systemctl enable rc-local
+    fi
     # Clear optional dev script for SSH keychain load on boot
     rm -f ~/.bash_profile
 
